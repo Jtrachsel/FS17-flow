@@ -1,17 +1,17 @@
 ## code base is FS12
 
 
-library(ggplot2)
+# library(ggplot2)
 library(tidyverse)
-library(reshape2)
+# library(reshape2)
 
 FS17 <- read.csv(file = "./data/FS17 Flow Results All.csv", header = T, stringsAsFactors = F)
 head(FS17)
 
 ### select columns... ###
 
-FS17_subset <- FS17[, c(2, 6:16)]
-head(FS17_subset)
+# FS17_subset <- FS17[, c(2, 6:16)]
+# head(FS17_subset)
 
 # Jules #
 
@@ -39,7 +39,7 @@ FS17_plot_14Feb <- FS17_long %>%
 
 FS17_plot_14Feb
 
-ggsave("FS17_plot_14Feb.pdf", plot = FS17_plot_14Feb, width = 20, height = 20, path = "~/Desktop")
+# ggsave("FS17_plot_14Feb.pdf", plot = FS17_plot_14Feb, width = 20, height = 20, path = "~/Desktop")
 
 FS17_plot_15Feb <- FS17_long %>% 
   filter(date == "15-Feb") %>% 
@@ -49,7 +49,7 @@ FS17_plot_15Feb <- FS17_long %>%
   theme(axis.text.x=element_text(angle = -45, hjust =0)) +
   facet_wrap( ~ cell_type, scales = "free_y")
 FS17_plot_15Feb
-ggsave("FS17_plot_15Feb.pdf", plot = FS17_plot_15Feb, width = 20, height = 20, path = "~/Desktop")
+# ggsave("FS17_plot_15Feb.pdf", plot = FS17_plot_15Feb, width = 20, height = 20, path = "~/Desktop")
 
 FS17_plot_16Feb <- FS17_long %>% 
   filter(date == "16-Feb") %>% 
@@ -59,7 +59,7 @@ FS17_plot_16Feb <- FS17_long %>%
   theme(axis.text.x=element_text(angle = -45, hjust =0)) +
   facet_wrap( ~ cell_type, scales = "free_y")
 FS17_plot_16Feb
-ggsave("FS17_plot_16Feb.pdf", plot = FS17_plot_16Feb, width = 20, height = 20, path = "~/Desktop")
+# ggsave("FS17_plot_16Feb.pdf", plot = FS17_plot_16Feb, width = 20, height = 20, path = "~/Desktop")
 
 FS17_plot_17Feb <- FS17_long %>% 
   filter(date == "17-Feb") %>% 
@@ -69,7 +69,7 @@ FS17_plot_17Feb <- FS17_long %>%
   theme(axis.text.x=element_text(angle = -45, hjust =0)) +
   facet_wrap( ~ cell_type, scales = "free_y")
 FS17_plot_17Feb
-ggsave("FS17_plot_17Feb.pdf", plot = FS17_plot_17Feb, width = 20, height = 20, path = "~/Desktop")
+# ggsave("FS17_plot_17Feb.pdf", plot = FS17_plot_17Feb, width = 20, height = 20, path = "~/Desktop")
 
 FS17_plot_19Feb <- FS17_long %>% 
   filter(date == "19-Feb") %>% 
@@ -79,7 +79,7 @@ FS17_plot_19Feb <- FS17_long %>%
   theme(axis.text.x=element_text(angle = -45, hjust =0)) +
   facet_wrap( ~ cell_type, scales = "free_y")
 FS17_plot_19Feb
-ggsave("FS17_plot_19Feb.pdf", plot = FS17_plot_19Feb, width = 20, height = 20, path = "~/Desktop")
+# ggsave("FS17_plot_19Feb.pdf", plot = FS17_plot_19Feb, width = 20, height = 20, path = "~/Desktop")
 
 FS17_plot_22Feb <- FS17_long %>% 
   filter(date == "22-Feb") %>% 
@@ -89,7 +89,7 @@ FS17_plot_22Feb <- FS17_long %>%
   theme(axis.text.x=element_text(angle = -45, hjust =0)) +
   facet_wrap( ~ cell_type, scales = "free_y")
 FS17_plot_22Feb
-ggsave("FS17_plot_22Feb.pdf", plot = FS17_plot_22Feb, width = 20, height = 20, path = "~/Desktop")
+# ggsave("FS17_plot_22Feb.pdf", plot = FS17_plot_22Feb, width = 20, height = 20, path = "~/Desktop")
 
 FS17_plot_25Feb <- FS17_long %>% 
   filter(date == "25-Feb") %>% 
@@ -99,7 +99,7 @@ FS17_plot_25Feb <- FS17_long %>%
   theme(axis.text.x=element_text(angle = -45, hjust =0)) +
   facet_wrap( ~ cell_type, scales = "free_y")
 FS17_plot_25Feb
-ggsave("FS17_plot_25Feb.pdf", plot = FS17_plot_25Feb, width = 20, height = 20, path = "~/Desktop")
+# ggsave("FS17_plot_25Feb.pdf", plot = FS17_plot_25Feb, width = 20, height = 20, path = "~/Desktop")
 
 
 
@@ -109,8 +109,8 @@ ggsave("FS17_plot_25Feb.pdf", plot = FS17_plot_25Feb, width = 20, height = 20, p
 ## this webpage might be helpful... uses spaghettie plots for longitudinal data 
 ## https://stats.idre.ucla.edu/r/faq/how-can-i-visualize-longitudinal-data-in-ggplot2/
 # setwd("~/Desktop/FS17 Flow FCS Files/")
-library(tidyverse) ##tidyverse contains ggplot2, dplyr, tidr, readr
-library(methods)
+# library(tidyverse) ##tidyverse contains ggplot2, dplyr, tidr, readr
+# library(methods)
 
 FS17 <- read.csv(file = "./data/FS17 Flow Results All.csv", header = T, stringsAsFactors = F)
 head(FS17)
@@ -137,6 +137,8 @@ FS17 %>% select(-FlowID) %>%
   geom_line(aes(group = Pig, color=Pig)) +
   facet_wrap( ~ CellType, scales = "free_y")
 
+# this looks weird because you need to make your pig variable a factor or a character
+
 
 ##########
 
@@ -149,10 +151,136 @@ FS17 %>% select(-FlowID) %>%
   geom_line(aes(group = Pig, color=Pig)) +
   facet_wrap( ~ CellType, scales = "free_y")
 
-  
+
+
+
+######################################################
+
+FS17 <- read_csv(file = "./data/FS17 Flow Results All.csv")
+
+str(FS17)
+
+FS17_clean <- FS17 %>%
+  select(-FlowID) %>%
+  mutate(Pig=as.character(Pig))
+
+FS17_long <- FS17_clean %>%
+  gather(key='cell_type', value = 'percentage', -c(1:6))
+
+
+FS17_sum <- FS17_long %>%
+  group_by(dpc, Trt, cell_type) %>% 
+  summarise(mean_p = mean(percentage), 
+            num_obs = n(), 
+            std_dev = sd(percentage), 
+            std_err = std_dev/sqrt(num_obs))
+
+
+FS17_sum %>% 
+  ggplot(aes(x=dpc, y=mean_p, color=Trt, fill = Trt)) +
+  geom_point() + geom_line() +
+  geom_ribbon(aes(ymin=mean_p - std_err, ymax = mean_p + std_err), alpha = .3) +
+  facet_wrap(~cell_type, scales = 'free') + 
+  theme_bw()
+
+FS17_sum$dpc
+
+
+
+
+
+FS17_sum %>% 
+  filter(cell_type == 'CD21p') %>% 
+  ggplot(aes(x=dpc, y=mean_p, color=Trt, fill = Trt)) +
+  geom_point() + geom_line() +
+  geom_ribbon(aes(ymin=mean_p - std_err, ymax = mean_p + std_err), alpha = .3) +
+  facet_wrap(~cell_type, scales = 'free') + 
+  theme_bw()
+
+
+FS17_sum %>% 
+  filter(Trt %in% c('inBCG-Ch', 'lvBCG-Ch', 'noBCG-Ch')) %>% 
+  ggplot(aes(x=dpc, y=mean_p, color=Trt, fill = Trt)) +
+  geom_point() + geom_line() +
+  geom_ribbon(aes(ymin=mean_p - std_err, ymax = mean_p + std_err), alpha = .3) +
+  facet_wrap(~cell_type, scales = 'free') + 
+  theme_bw()
+
+#####
+
+FS17_long %>% 
+  filter(Trt == 'PRRSVsed') %>% 
+  ggplot(aes(x=dpc, y=percentage, color = Pig)) + geom_line() + 
+  facet_wrap(~cell_type, scales = 'free')
 
 
 
 
 
 
+
+
+
+
+
+######## tempdata
+
+
+
+temps <- read_csv('data/FS17 Obj2 Temp Data.csv')
+temps$pig <- as.character(temps$pig)
+
+temps$pig_day <- paste(temps$pig, temps$dpi)
+
+
+temps %>% ggplot(aes(x=dpi, y=TempF)) + 
+  geom_line(aes(group = pig)) + facet_wrap(~Trt)
+
+weird_ones <- temps %>% 
+  group_by(pig_day) %>%
+  tally() %>%
+  filter(n != 1) %>% 
+  select(pig_day) %>% 
+  unlist()
+
+
+temps %>% filter((pig_day %in% weird_ones)) %>% 
+  ggplot(aes(x=dpi, y=TempC, color=pig)) + geom_point()
+
+
+# sum(temps$pig %in% weird_ones$pig & temps$dpi %in% weird_ones$dpi)
+
+
+temps <- temps %>%
+  group_by(pig, dpi) %>%
+  mutate(new_temp = mean(TempC))# %>% ggplot(aes(x=dpi, y=TempC)) + geom_line(aes(group=pig))
+
+
+temps %>% ggplot(aes(x=dpi, y=TempC, color=PRRSV)) + geom_line(aes(group=pig))
+
+
+meta <- temps %>%ungroup() %>%  select(pig, Room, BCGTrt, PRRSV, Trt) %>% unique()
+
+temp_sum <- temps %>% group_by(pig) %>% 
+  summarise(max_temp = max(new_temp), 
+            mean_temp = mean(new_temp), 
+            min_temp = min(new_temp), 
+            sd_temp = sd(new_temp), 
+            day_max = dpi[which.max(new_temp)], 
+            dif_temp = max_temp - min_temp) %>% left_join(meta)
+
+
+
+
+temp_sum %>% ggplot(aes(x=Trt, y=max_temp, color=Trt)) + geom_boxplot()
+temp_sum %>% ggplot(aes(x=Trt, y=min_temp, color=Trt)) + geom_boxplot()
+temp_sum %>% ggplot(aes(x=Trt, y=sd_temp, color=Trt)) + geom_boxplot()
+temp_sum %>% ggplot(aes(x=Trt, y=mean_temp, color=Trt)) + geom_boxplot()
+temp_sum %>% ggplot(aes(x=Trt, y=day_max, color=Trt)) + geom_point()
+temp_sum %>% ggplot(aes(x=Trt, y=dif_temp, color=mean_temp)) + geom_point()
+
+
+
+temp_sum %>% ggplot(aes(x=dif_temp, y=mean_temp, color=max_temp)) + geom_point()
+temp_sum %>% ggplot(aes(x=mean_temp, y=max_temp, color=dif_temp)) + geom_point()
+temp_sum %>% ggplot(aes(x=dif_temp, y=mean_temp, color=day_max)) + geom_point()
