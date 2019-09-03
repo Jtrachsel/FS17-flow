@@ -99,6 +99,7 @@ FS17_plot_25Feb <- FS17_long %>%
   theme(axis.text.x=element_text(angle = -45, hjust =0)) +
   facet_wrap( ~ cell_type, scales = "free_y")
 FS17_plot_25Feb
+
 # ggsave("FS17_plot_25Feb.pdf", plot = FS17_plot_25Feb, width = 20, height = 20, path = "~/Desktop")
 
 
@@ -189,6 +190,7 @@ FS17_sum$dpc
 
 
 
+
 FS17_sum %>% 
   filter(cell_type == 'CD21p') %>% 
   ggplot(aes(x=dpc, y=mean_p, color=Trt, fill = Trt)) +
@@ -199,7 +201,19 @@ FS17_sum %>%
 
 
 FS17_sum %>% 
-  filter(Trt %in% c('inBCG-Ch', 'lvBCG-Ch', 'noBCG-Ch')) %>% 
+  filter(cell_type == 'CD4pCD8ap') %>% 
+  ggplot(aes(x=dpc, y=mean_p, color=Trt, fill = Trt)) +
+  geom_point() + geom_line() +
+  geom_ribbon(aes(ymin=mean_p - std_err, ymax = mean_p + std_err), alpha = .3) +
+  facet_wrap(~cell_type, scales = 'free') + 
+  theme_bw()
+
+
+
+
+
+FS17_sum %>% 
+  filter(Trt %in% c('inBCG-Ch', 'lvBCG-Ch', 'noBCG-Ch', 'weird')) %>% 
   ggplot(aes(x=dpc, y=mean_p, color=Trt, fill = Trt)) +
   geom_point() + geom_line() +
   geom_ribbon(aes(ymin=mean_p - std_err, ymax = mean_p + std_err), alpha = .3) +
@@ -219,10 +233,6 @@ FS17_long %>%
 
 
 
-
-
-
-
 ######## tempdata
 
 
@@ -233,9 +243,13 @@ temps$pig <- as.character(temps$pig)
 temps$pig_day <- paste(temps$pig, temps$dpi)
 
 
-temps %>% ggplot(aes(x=dpi, y=TempF)) + 
-  geom_line(aes(group = pig)) + facet_wrap(~Trt)
+temps %>% group_by(Trt) %>% summarise(meanT=mean(TempC))
 
+temps %>% ggplot(aes(x=dpi, y=TempC)) + 
+  geom_line(aes(group = pig)) +
+  facet_wrap(~Trt)+ geom_hline(yintercept = 39.8, color='red')
+
+# same pig 2x measurements per day #
 weird_ones <- temps %>% 
   group_by(pig_day) %>%
   tally() %>%
@@ -243,9 +257,8 @@ weird_ones <- temps %>%
   select(pig_day) %>% 
   unlist()
 
-
 temps %>% filter((pig_day %in% weird_ones)) %>% 
-  ggplot(aes(x=dpi, y=TempC, color=pig)) + geom_point()
+  ggplot(aes(x=dpi, y=TempC, color=pig)) + geom_point() 
 
 
 # sum(temps$pig %in% weird_ones$pig & temps$dpi %in% weird_ones$dpi)
@@ -255,11 +268,22 @@ temps <- temps %>%
   group_by(pig, dpi) %>%
   mutate(new_temp = mean(TempC))# %>% ggplot(aes(x=dpi, y=TempC)) + geom_line(aes(group=pig))
 
+### NEED TO REMOVE REDUND
+temps %>% group_by(pig_day) %>% tally() %>% filter(n>1) %>% select(pig_day) %>% unlist()
 
-temps %>% ggplot(aes(x=dpi, y=TempC, color=PRRSV)) + geom_line(aes(group=pig))
+temps %>% ggplot(aes(x=dpi, y=new_temp, color=PRRSV)) + geom_line(aes(group=pig))
+
+#######
+
+library(ggforce)
 
 
-meta <- temps %>%ungroup() %>%  select(pig, Room, BCGTrt, PRRSV, Trt) %>% unique()
+
+
+meta <- temps %>%
+  ungroup() %>%
+  select(pig, Room, BCGTrt, PRRSV, Trt) %>%
+  unique()
 
 temp_sum <- temps %>% group_by(pig) %>% 
   summarise(max_temp = max(new_temp), 
@@ -272,15 +296,88 @@ temp_sum <- temps %>% group_by(pig) %>%
 
 
 
-temp_sum %>% ggplot(aes(x=Trt, y=max_temp, color=Trt)) + geom_boxplot()
-temp_sum %>% ggplot(aes(x=Trt, y=min_temp, color=Trt)) + geom_boxplot()
-temp_sum %>% ggplot(aes(x=Trt, y=sd_temp, color=Trt)) + geom_boxplot()
-temp_sum %>% ggplot(aes(x=Trt, y=mean_temp, color=Trt)) + geom_boxplot()
-temp_sum %>% ggplot(aes(x=Trt, y=day_max, color=Trt)) + geom_point()
-temp_sum %>% ggplot(aes(x=Trt, y=dif_temp, color=mean_temp)) + geom_point()
+temp_sum %>% ggplot(aes(x=Trt, y=max_temp, fill=Trt)) + geom_boxplot() + theme_bw()
+temp_sum %>% ggplot(aes(x=Trt, y=min_temp, fill=Trt)) + geom_boxplot()+ theme_bw()
+temp_sum %>% ggplot(aes(x=Trt, y=sd_temp, fill=Trt)) + geom_boxplot()+ theme_bw()
+temp_sum %>% ggplot(aes(x=Trt, y=mean_temp, fill=Trt)) + geom_boxplot()+ theme_bw()
+temp_sum %>% ggplot(aes(x=Trt, y=day_max, fill=Trt)) + geom_point(shape=21, size=3)+ theme_bw()
+temp_sum %>% ggplot(aes(x=Trt, y=dif_temp, fill=mean_temp)) + geom_point(shape=21, size=4)+ theme_bw()
 
 
 
-temp_sum %>% ggplot(aes(x=dif_temp, y=mean_temp, color=max_temp)) + geom_point()
-temp_sum %>% ggplot(aes(x=mean_temp, y=max_temp, color=dif_temp)) + geom_point()
-temp_sum %>% ggplot(aes(x=dif_temp, y=mean_temp, color=day_max)) + geom_point()
+temp_sum %>%
+  ggplot(aes(x=dif_temp, y=mean_temp, fill=max_temp)) +
+  geom_point(shape=21, color='black', size=3)+ scale_fill_viridis_c()
+
+
+temp_sum %>%filter(!(Trt %in% c('PRRSVsed', 'Mock'))) %>% 
+  ggplot(aes(x=dif_temp, y=mean_temp, fill=max_temp)) +
+  geom_point(shape=21, color='black', size=3)+ scale_fill_viridis_c() +
+  geom_text(aes(label=pig), nudge_x = .055) +
+  annotate(geom = 'rect',
+           xmin = 1.75,
+           xmax = 2.7,
+           ymin=40.07,
+           ymax = 40.8,
+           fill=NA,
+           color='black')
+
+
+
+
+
+int_pigs <- temp_sum %>%filter(!(Trt %in% c('PRRSVsed', 'Mock'))) %>%
+  filter(dif_temp >1.75 & mean_temp>40.2) %>% 
+  select(pig) %>% unlist()
+
+
+
+# temp_sum %>% ggplot(aes(x=min_temp, y=max_temp, color=dif_temp)) + geom_point()
+# temp_sum %>% ggplot(aes(x=dif_temp, y=mean_temp, color=day_max)) + geom_point()
+
+
+
+##########
+
+
+
+
+FS17_long$Trt2 <- ifelse(FS17_long$Pig %in% int_pigs, 'weird', FS17_long$Trt)
+
+FS17_long %>% group_by(Trt, Trt2) %>% tally()
+
+FS17_sum <- FS17_long %>%
+  group_by(dpc, Trt2, cell_type) %>% 
+  summarise(mean_p = mean(percentage), 
+            num_obs = n(), 
+            std_dev = sd(percentage), 
+            std_err = std_dev/sqrt(num_obs))
+
+FS17_sum %>%
+  ggplot(aes(x=dpc, y=mean_p, fill=Trt2)) +
+  geom_ribbon(aes(ymin=mean_p - std_err, ymax=mean_p + std_err), alpha=.5) +
+  facet_wrap(~cell_type, scales = 'free')
+
+
+
+FS17_sum %>% filter(cell_type == 'CD4pCD8ap') %>% 
+  ggplot(aes(x=dpc, y=mean_p, fill=Trt2)) +
+  geom_ribbon(aes(ymin=mean_p - std_err, ymax=mean_p + std_err), alpha=.5) +
+  facet_wrap(~cell_type, scales = 'free')
+
+FS17_sum %>% filter(dpc != 11) %>% 
+  ggplot(aes(x=dpc, y=mean_p, fill=Trt2)) +
+  geom_ribbon(aes(ymin=mean_p - std_err, ymax=mean_p + std_err), alpha=.5) +
+  facet_wrap(~cell_type, scales = 'free')
+
+
+##
+
+FS17_sum %>% filter(cell_type == 'CD4pCD8ap') %>% 
+  filter(!Trt2 %in% c('Mock', 'PRRSVsed')) %>% 
+  ggplot(aes(x=dpc, y=mean_p, fill=Trt2)) +
+  geom_ribbon(aes(ymin=mean_p - std_err, ymax=mean_p + std_err), alpha=.5) +
+  facet_wrap(~cell_type, scales = 'free')
+
+
+
