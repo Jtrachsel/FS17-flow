@@ -200,6 +200,8 @@ FS17_sum %>%
   theme_bw()
 
 
+#### double pos cells seem lower in all animals that got PRRSV
+
 FS17_sum %>% 
   filter(cell_type == 'CD4pCD8ap') %>% 
   ggplot(aes(x=dpc, y=mean_p, color=Trt, fill = Trt)) +
@@ -242,7 +244,7 @@ temps$pig <- as.character(temps$pig)
 
 temps$pig_day <- paste(temps$pig, temps$dpi)
 
-
+# mean temp for Mock group is 39.8
 temps %>% group_by(Trt) %>% summarise(meanT=mean(TempC))
 
 temps %>% ggplot(aes(x=dpi, y=TempC)) + 
@@ -266,12 +268,19 @@ temps %>% filter((pig_day %in% weird_ones)) %>%
 
 temps <- temps %>%
   group_by(pig, dpi) %>%
-  mutate(new_temp = mean(TempC))# %>% ggplot(aes(x=dpi, y=TempC)) + geom_line(aes(group=pig))
+  mutate(TempC = mean(TempC)) %>% 
+  select(-TempF) %>% 
+  unique()# %>% ggplot(aes(x=dpi, y=TempC)) + geom_line(aes(group=pig))
 
-### NEED TO REMOVE REDUND
-temps %>% group_by(pig_day) %>% tally() %>% filter(n>1) %>% select(pig_day) %>% unlist()
 
-temps %>% ggplot(aes(x=dpi, y=new_temp, color=PRRSV)) + geom_line(aes(group=pig))
+temps %>% ggplot(aes(x=dpi, y=TempC)) + 
+  geom_line(aes(group = pig)) +
+  facet_wrap(~Trt)+ geom_hline(yintercept = 39.8, color='red')
+
+
+temps %>% ggplot(aes(x=dpi, y=TempC, color=PRRSV)) + geom_line(aes(group=pig))
+
+
 
 #######
 
@@ -286,13 +295,26 @@ meta <- temps %>%
   unique()
 
 temp_sum <- temps %>% group_by(pig) %>% 
-  summarise(max_temp = max(new_temp), 
-            mean_temp = mean(new_temp), 
-            min_temp = min(new_temp), 
-            sd_temp = sd(new_temp), 
-            day_max = dpi[which.max(new_temp)], 
+  summarise(max_temp = max(TempC), 
+            mean_temp = mean(TempC), 
+            min_temp = min(TempC), 
+            sd_temp = sd(TempC), 
+            day_max = dpi[which.max(TempC)], 
             dif_temp = max_temp - min_temp) %>% left_join(meta)
 
+
+scaled_temps <- temp_sum %>% mutate_if(is.numeric, scale) # centers and scales variables
+# this means that each variable now has a mean of 0 and standard dev of 1
+# should make calculating a fever score easier as each aspect of the fever will contribute equally
+# to the score, instead of the variable with the largest numeric value dominating the 
+# final value
+
+
+hist(scaled_temps$max_temp)
+hist(scaled_temps$mean_temp)
+hist(scaled_temps$min_temp)
+hist(scaled_temps$sd_temp)
+hist(scaled_temps$dif_temp)
 
 
 
@@ -332,41 +354,87 @@ int_pigs <- temp_sum %>%filter(!(Trt %in% c('PRRSVsed', 'Mock'))) %>%
 
 
 
+scaled_temps%>%filter(!(Trt %in% c('PRRSVsed', 'Mock'))) %>% 
+  ggplot(aes(x=dif_temp, y=mean_temp, fill=max_temp)) +
+  geom_point(shape=21, color='black', size=3)+ scale_fill_viridis_c()
+
+
+#### FEVER SCORE CALC HERE ####
+  
+scaled_temps <- scaled_temps %>% mutate(fever_score=max_temp+mean_temp+dif_temp+sd_temp) 
+# scaled_temps <- scaled_temps %>% mutate(fever_score=max_temp+mean_temp+dif_temp) 
+
+
+###
+
+
+
+scaled_temps$fever_class <- cut(scaled_temps$fever_score, 3, labels = c('low', 'mid', 'high'))
+scaled_temps$Pig <- scaled_temps$pig
+
+
+scaled_temps %>% filter(!(Trt %in% c('PRRSVsed', 'Mock'))) %>% 
+  ggplot(aes(x=1, y=fever_score))  +
+  geom_violin()+
+  geom_jitter(aes(color=fever_class),width = .2) + 
+  ggtitle('Fever score distribution, without PRRSVed and Mock pigs')
+
+scaled_temps %>% #filter(!(Trt %in% c('PRRSVsed', 'Mock'))) %>% 
+  ggplot(aes(x=1, y=fever_score))  +
+  geom_violin()+
+  geom_jitter(aes(color=fever_class),width = .2) + 
+  ggtitle('Fever score distribution, with PRRSVed and Mock pigs')
+
+
+
+
+scaled_temps %>% ggplot(aes(x=Trt, y=fever_score, color=fever_class)) + geom_jitter()
+
+scaled_temps %>% ggplot(aes(x=fever_class, y=fever_score, color=fever_score)) + geom_jitter()
+
+
+LETSDOTHIS <- scaled_temps %>% select(Pig, fever_class, fever_score) %>% right_join(FS17_long)
+
 # temp_sum %>% ggplot(aes(x=min_temp, y=max_temp, color=dif_temp)) + geom_point()
 # temp_sum %>% ggplot(aes(x=dif_temp, y=mean_temp, color=day_max)) + geom_point()
 
-
+FS17_sum <- LETSDOTHIS %>% filter(!(Trt %in% c('Mock', 'PRRSVsed'))) %>% 
+  group_by(fever_class, dpc, cell_type) %>% 
+  summarise(mean_p = mean(percentage), 
+            num_obs = n(), 
+            std_dev = sd(percentage), 
+            std_err = std_dev/sqrt(num_obs))
 
 ##########
 
 
 
 
-FS17_long$Trt2 <- ifelse(FS17_long$Pig %in% int_pigs, 'weird', FS17_long$Trt)
-
-FS17_long %>% group_by(Trt, Trt2) %>% tally()
-
-FS17_sum <- FS17_long %>%
-  group_by(dpc, Trt2, cell_type) %>% 
-  summarise(mean_p = mean(percentage), 
-            num_obs = n(), 
-            std_dev = sd(percentage), 
-            std_err = std_dev/sqrt(num_obs))
+# FS17_long$Trt2 <- ifelse(FS17_long$Pig %in% int_pigs, 'weird', FS17_long$Trt)
+# 
+# FS17_long %>% group_by(Trt, Trt2) %>% tally()
+# 
+# FS17_sum <- FS17_long %>%
+#   group_by(dpc, Trt2, cell_type) %>% 
+#   summarise(mean_p = mean(percentage), 
+#             num_obs = n(), 
+#             std_dev = sd(percentage), 
+#             std_err = std_dev/sqrt(num_obs))
 
 FS17_sum %>%
-  ggplot(aes(x=dpc, y=mean_p, fill=Trt2)) +
+  ggplot(aes(x=dpc, y=mean_p, fill=fever_class)) +
   geom_ribbon(aes(ymin=mean_p - std_err, ymax=mean_p + std_err), alpha=.5) +
   facet_wrap(~cell_type, scales = 'free')
 
 
 
 FS17_sum %>% filter(cell_type == 'CD4pCD8ap') %>% 
-  ggplot(aes(x=dpc, y=mean_p, fill=Trt2)) +
+  ggplot(aes(x=dpc, y=mean_p, fill=fever_class)) +
   geom_ribbon(aes(ymin=mean_p - std_err, ymax=mean_p + std_err), alpha=.5) +
   facet_wrap(~cell_type, scales = 'free')
 
 FS17_sum %>% filter(dpc != 11) %>% 
-  ggplot(aes(x=dpc, y=mean_p, fill=Trt2)) +
+  ggplot(aes(x=dpc, y=mean_p, fill=fever_class)) +
   geom_ribbon(aes(ymin=mean_p - std_err, ymax=mean_p + std_err), alpha=.5) +
   facet_wrap(~cell_type, scales = 'free')
 
@@ -374,10 +442,21 @@ FS17_sum %>% filter(dpc != 11) %>%
 ##
 
 FS17_sum %>% filter(cell_type == 'CD4pCD8ap') %>% 
-  filter(!Trt2 %in% c('Mock', 'PRRSVsed')) %>% 
-  ggplot(aes(x=dpc, y=mean_p, fill=Trt2)) +
+  #filter(!Trt2 %in% c('Mock', 'PRRSVsed')) %>% 
+  ggplot(aes(x=dpc, y=mean_p, fill=fever_class, color=fever_class)) +
   geom_ribbon(aes(ymin=mean_p - std_err, ymax=mean_p + std_err), alpha=.5) +
-  facet_wrap(~cell_type, scales = 'free')
+  geom_point(shape=21)+geom_path()+
+  facet_wrap(~cell_type, scales = 'free') + 
+  theme_bw() + ylab('percent') + xlab('days post challenge')
 
+
+FS17_sum %>% filter(cell_type == 'CD4pCD8ap') %>% 
+  ggplot(aes(x=fever_class, y=mean_p, fill=fever_class)) +
+  geom_col(position = 'dodge') +
+  geom_errorbar(aes(ymin=mean_p - std_err,
+                    ymax=mean_p + std_err), 
+                width = .2) +
+  geom_text(aes(label=num_obs, y=.5), size=3)+
+  facet_wrap(~dpc)
 
 
