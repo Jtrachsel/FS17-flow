@@ -194,7 +194,7 @@ FS17_sum$dpc
 
 
 
-
+#### CD21pos cells seem lower in all animals that got PRRSVs
 FS17_sum %>% 
   filter(cell_type == 'CD21p') %>% 
   ggplot(aes(x=dpc, y=mean_p, color=Trt, fill = Trt)) +
@@ -226,8 +226,28 @@ FS17_sum %>%
   facet_wrap(~cell_type, scales = 'free') + 
   theme_bw()
 
-##### spaghetti plots for each treatment
+treat_tests <- FS17_long %>%
+  filter(Trt %in% c('inBCG-Ch', 'lvBCG-Ch', 'noBCG-Ch')) %>%
+  group_by(dpc, cell_type) %>% 
+  nest() %>% 
+  mutate(anova=map(data, ~ aov(data=., formula = percentage ~ Trt)), 
+         tid_ano = map(anova, tidy), 
+         tuk = map(anova, TukeyHSD), 
+         tid_tuk = map(tuk, tidy))%>% 
+  select(dpc, cell_type, tid_tuk) %>% 
+  unnest(cols = c('tid_tuk')) %>%
+  mutate(p.adj = p.adjust(adj.p.value, method = 'fdr')) %>% 
+  filter(p.adj < 0.05)
 
+# not a whole lot of treatment differences that make sense....
+treat_tests
+
+
+
+
+###########
+##### spaghetti plots for each treatment
+## shows variation within treatments
 FS17_long %>% 
   filter(Trt == 'PRRSVsed') %>% 
   ggplot(aes(x=dpc, y=percentage, color = Pig)) + geom_line() + 
@@ -256,7 +276,7 @@ FS17_long %>%
 
 
 
-######## tempdata
+######## temperature data
 
 
 
@@ -281,6 +301,8 @@ weird_ones <- temps %>%
   filter(n != 1) %>% 
   select(pig_day) %>% 
   unlist()
+
+weird_ones
 
 ## Can see from this plot the pigs that have multiple measurements per day
 temps %>% filter((pig_day %in% weird_ones)) %>% 
@@ -308,8 +330,8 @@ temps %>%
   group_by(pig, Trt) %>%tally() %>% filter(n<14)
 temps <- temps %>% filter(pig != 517)
 
-temps %>%
-  group_by(dpi, Trt) %>%tally() #%>% filter(n<14)
+# temps %>%
+#   group_by(dpi, Trt) %>%tally() #%>% filter(n<14)
 
 temps %>% ggplot(aes(x=dpi, y=TempC)) + 
   geom_line(aes(group = pig)) +
@@ -340,13 +362,13 @@ temps %>% ggplot(aes(x=dpi, y=TempRmin))+ geom_line(aes(group = pig)) +
 
 library(pracma)
 # This temp_sum is based on absolute temperatures
-temp_sum <- temps %>% group_by(pig) %>% 
-  summarise(max_temp = max(TempC), 
-            mean_temp = mean(TempC), 
-            min_temp = min(TempC), 
-            sd_temp = sd(TempC), 
-            day_max = dpi[which.max(TempC)], 
-            dif_temp = max_temp - min_temp) %>% left_join(meta)
+# temp_sum <- temps %>% group_by(pig) %>% 
+#   summarise(max_temp = max(TempC), 
+#             mean_temp = mean(TempC), 
+#             min_temp = min(TempC), 
+#             sd_temp = sd(TempC), 
+#             day_max = dpi[which.max(TempC)], 
+#             dif_temp = max_temp - min_temp) %>% left_join(meta)
 
 # this temp_sum is based on relative temperatures (each pig was adjusted relative to their minimum temperature)
 temp_sum <- temps %>%
@@ -444,6 +466,11 @@ scaled_temps <- temp_sum %>% mutate_if(is.numeric, scale) # centers and scales v
 
 # scaled_temps <- scaled_temps %>% mutate(fever_score=mean_temp+sd_temp) 
 
+# fever score is a combination of:
+# max_temp to capture the highest the temperature spiked
+# mean_temp to capture the overall elevation of temperature
+# sd_temp to capture the jumpiness or swings in temperature 
+# all are scaled so that each portion contributes equally to fever score
 scaled_temps <- scaled_temps %>% mutate(fever_score=max_temp+mean_temp+sd_temp)
 
 # scaled_temps <- scaled_temps %>% mutate(fever_score=max_temp+mean_temp)
